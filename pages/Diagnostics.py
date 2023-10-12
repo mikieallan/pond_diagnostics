@@ -24,7 +24,7 @@ min_date = monitorings['FechaMuestreo'].min().date()
 
 harvests = pd.read_csv('bravito_harvests.csv')
 
-
+#last_cycle = monitorings.loc[monitorings.groupby('')]
 
 def get_decreasing(df):
     data = (
