@@ -28,7 +28,7 @@ max_date = monitorings['FechaMuestreo'].max().date()
 min_date = monitorings['FechaMuestreo'].min().date()
 
 harvests = pd.read_csv('bravito_harvests.csv')
-
+active_cycles = pd.read_csv('active_cycles.csv')
 print(harvests.head())
 #last_cycle = monitorings.loc[monitorings.groupby('')]
 
@@ -226,10 +226,10 @@ sidebar_var2 = st.sidebar.selectbox(
 
 
 sidebar_cycle = st.sidebar.selectbox(
-    "Cycle",
+    "Pond",
     cycle_options,
     index=None,
-    placeholder="Select Cycle",
+    placeholder="Select Pond",
     )
 
 start_time, end_time = st.sidebar.slider(
@@ -320,7 +320,13 @@ if second_graph:
         plot_current_cycle4 = monitorings.loc[monitorings['PKCiclo'] == cycle_id, ['cycle_days', y_variable4]]
 
 
-
+if sidebar_cycle:
+    current_cycle_density = active_cycles.loc[active_cycles['PKCiclo'] == cycle_id, 'density_ha'].iloc[0]
+    current_cycle_ha = active_cycles.loc[active_cycles['PKCiclo'] == cycle_id, 'Hectareas'].iloc[0]
+    title = str(sidebar_cycle) + " - " + str(round(current_cycle_ha,2))+ " Ha" + " - " + str(current_cycle_density)+ " animals/ha" 
+else:
+   current_cycle_density = None
+   title = ""
 
 
 
@@ -433,7 +439,7 @@ if show_raleos & len(cycle_raleos)>0:
    
     # Add figure title
 fig.update_layout(
-        title_text="Pond Diagnostics",
+        title_text=title,
         yaxis2=dict(
             side="right",
             tickmode="sync",

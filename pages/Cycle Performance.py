@@ -34,9 +34,6 @@ min_date = cycles['FechaSiembra'].min().date()
 
 
 monitorings = pd.read_csv('monitoring_cleaned.csv')
-print(cycles.columns)
-
-
 
 labels_dict = {
     'avg_price_kg': 'Survival Rate',
@@ -85,7 +82,7 @@ bin_str = st.sidebar.selectbox(
     "Grouping Variable",
     ['Density','Supplier'],
     index = None,
-    placeholder="Group by",
+    placeholder="Select Variable",
     )
 
 start_time, end_time = st.sidebar.slider(
