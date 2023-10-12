@@ -18,18 +18,18 @@ from plotly.subplots import make_subplots
 sns.set_style('whitegrid')
 
 monitorings = pd.read_csv('monitoring_cleaned.csv')
-print("columns below")
-print(monitorings.columns)
+
 
 monitorings['FechaMuestreo'] = pd.to_datetime(monitorings['FechaMuestreo'])
 
 monitorings['feed_percent_biomass'] =   (monitorings['KilosAlimento']/7) / monitorings['live_biomass']
-print(monitorings.columns)
+
 max_date = monitorings['FechaMuestreo'].max().date()
 min_date = monitorings['FechaMuestreo'].min().date()
 
 harvests = pd.read_csv('bravito_harvests.csv')
 
+print(harvests.head())
 #last_cycle = monitorings.loc[monitorings.groupby('')]
 
 def get_decreasing(df):
@@ -139,8 +139,7 @@ pond_cycle_dict = active_cycles.set_index('pondName')['PKCiclo'].to_dict()
 
 
 def clean_df(df, x_variable, y_variable, min_threshold, max_threshold, absolute_min, absolute_max, start_date,end_date):
-  print(df.shape)
-  print(df.columns)
+  
   df = df.dropna(subset=[x_variable, y_variable]).copy()
   df = df[(df[y_variable] < absolute_max) 
           & (df[y_variable] > absolute_min) 
@@ -171,10 +170,9 @@ def clean_df(df, x_variable, y_variable, min_threshold, max_threshold, absolute_
 
 def get_curve_params(df,y_variable, model, x_variable = 'cycle_days'):
   x_train = df[x_variable]
-  print(x_train.iloc[:5])
-  print(x_train.shape)
+ 
   y_train = df[y_variable]
-  print(y_variable)
+  
 
   curve_params, covariance = curve_fit(model,
                                      x_train,
@@ -268,9 +266,6 @@ if second_graph:
 y_variable1 = labels_reverse_dict[sidebar_var1]
 y_variable2 = labels_reverse_dict[sidebar_var2]
 
-if sidebar_cycle:
-    cycle_id = pond_cycle_dict[sidebar_cycle]
-        
 
 
 
@@ -286,7 +281,7 @@ def get_variable_df(df, y_variable, model,start_time, end_time):
     else:
        curve_params = get_curve_params(cleaned_df, y_variable,model)
        plot_df = plot_benchmark(curve_params,model, 5, 91, 1, 'Cycle_Day', y_variable)
-    print(curve_params)
+    
     
     if y_variable == 'Supervivencia':
        plot_df.to_csv('bravito_survival_benchmark.csv')
@@ -298,30 +293,32 @@ def get_variable_df(df, y_variable, model,start_time, end_time):
 variable1_df = get_variable_df(monitorings, y_variable1, exponential_fit, start_time, end_time)
 variable2_df = get_variable_df(monitorings, y_variable2, exponential_fit, start_time, end_time)
 
-if second_graph:
-    variable3_df = get_variable_df(monitorings, y_variable3, exponential_fit, start_time, end_time)
-    variable4_df = get_variable_df(monitorings, y_variable4, exponential_fit, start_time, end_time)
-        
-    plot_current_cycle3 = monitorings.loc[monitorings['PKCiclo'] == cycle_id, ['cycle_days', y_variable3]]
-
-
-    plot_current_cycle4 = monitorings.loc[monitorings['PKCiclo'] == cycle_id, ['cycle_days', y_variable4]]
-
-
-
-
 if sidebar_cycle:
+    cycle_id = int(pond_cycle_dict[sidebar_cycle])
+  #  cycle_id = 5440
+    cycle_raleos =  harvests.loc[
+                        (harvests['Parcial'] == 1) & 
+                        (harvests['PKCiclo'] == cycle_id)]
+    print(cycle_raleos)
+    
     plot_current_cycle = monitorings.loc[monitorings['PKCiclo'] == cycle_id, ['cycle_days', y_variable1]]
 
 
     plot_current_cycle2 = monitorings.loc[monitorings['PKCiclo'] == cycle_id, ['cycle_days', y_variable2]]
-
-    
-    cycle_raleos =  harvests.loc[
-                        (harvests['Parcial'] == 1) & 
-                        (harvests['PKCiclo'] == cycle_id)]
 else:
-   cycle_raleos = pd.DataFrame()
+    cycle_raleos = pd.DataFrame()
+    cycle_id = None
+        
+
+if second_graph:
+    variable3_df = get_variable_df(monitorings, y_variable3, exponential_fit, start_time, end_time)
+    variable4_df = get_variable_df(monitorings, y_variable4, exponential_fit, start_time, end_time)
+    if sidebar_cycle:   
+        plot_current_cycle3 = monitorings.loc[monitorings['PKCiclo'] == cycle_id, ['cycle_days', y_variable3]]
+
+
+        plot_current_cycle4 = monitorings.loc[monitorings['PKCiclo'] == cycle_id, ['cycle_days', y_variable4]]
+
 
 
 
@@ -425,6 +422,8 @@ if second_graph:
         )
     fig2.update_yaxes(title_text=labels_dict[y_variable3], secondary_y=False)
     fig2.update_yaxes(title_text=labels_dict[y_variable4], secondary_y=True)
+
+print(cycle_raleos.head())
 
 if show_raleos & len(cycle_raleos)>0:
     for i in cycle_raleos['cycle_days']:

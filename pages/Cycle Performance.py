@@ -83,7 +83,7 @@ objective_var2 = st.sidebar.selectbox(
     )
 bin_str = st.sidebar.selectbox(
     "Grouping Variable",
-    ['Density','Supplier', 'Feed Type','Survival Rate'],
+    ['Density','Supplier'],
     index = None,
     placeholder="Group by",
     )
