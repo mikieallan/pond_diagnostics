@@ -10,9 +10,9 @@ from datetime import datetime
 sns.set_style('whitegrid')
 
 cycles = pd.read_csv('cycles_cleaned.csv')
-print(cycles['MnProveedor'].value_counts())
+cycles = cycles[cycles['PesoPromedio2'] >19]
 
-top10 = (cycles['MnProveedor'].value_counts()[cycles['MnProveedor'].value_counts()> 20]).index
+top10 = (cycles['MnProveedor'].value_counts()[cycles['MnProveedor'].value_counts()> 18]).index
 print(top10)
 # At locations where the neighborhood is NOT in the top 10, 
 # replace the neighborhood with 'OTHER'
@@ -35,8 +35,6 @@ min_date = cycles['FechaSiembra'].min().date()
 
 monitorings = pd.read_csv('monitoring_cleaned.csv')
 print(cycles.columns)
-
-
 
 
 
@@ -86,7 +84,8 @@ objective_var2 = st.sidebar.selectbox(
 bin_str = st.sidebar.selectbox(
     "Grouping Variable",
     ['Density','Supplier', 'Feed Type','Survival Rate'],
-    placeholder="Objective",
+    index = None,
+    placeholder="Group by",
     )
 
 start_time, end_time = st.sidebar.slider(
@@ -104,8 +103,11 @@ cycles['cycle_profit_ha_day'] = cycles['cycle_total_profit_usd'] / cycles['Hecta
 
 show_trendlines_only = st.sidebar.toggle('Show trendline only', value = False)
 
-bin_str_original = category_reverse_dict[bin_str]
-bin_str_binned = bin_str_original + '_bin'
+if bin_str:
+    bin_str_original = category_reverse_dict[bin_str]
+    bin_str_binned = bin_str_original + '_bin'
+else: 
+    bin_str = None
 
 
 cycles['FechaMuestreo'] = pd.to_datetime(cycles['FechaMuestreo'])
@@ -118,35 +120,47 @@ cycles_df = cycles[(cycles['FechaSiembra'].dt.date >= start_time)
                    & (cycles['FechaSiembra'].dt.date <= end_time)
                    
                    ]
-
-if bin_str in ['Density',
-               'Survival Rate']:
-    cycles_df[bin_str_binned] = bin_continuous(cycles_df[bin_str_original],3)
-else:
-    cycles_df[bin_str_binned] = cycles_df[bin_str_original]
+if bin_str:
+    if bin_str in ['Density',
+                'Survival Rate']:
+        cycles_df[bin_str_binned] = bin_continuous(cycles_df[bin_str_original],3)
+    else:
+        cycles_df[bin_str_binned] = cycles_df[bin_str_original]
 
 x_variable = labels_reverse_dict[x_var1]
 objective_variable_str = labels_reverse_dict[objective_var2]
 
 
+if bin_str:
 
+    fig = px.scatter(cycles_df, 
+                        x=x_variable, 
+                        y=objective_variable_str, 
+                        color=bin_str_binned,
+                    hover_data=['IDPiscina'],
+                    trendline="ols"
+                    
+                    )
+else:
+    fig = px.scatter(cycles_df, 
+                        x=x_variable, 
+                        y=objective_variable_str, 
+                        color=None,
+                    hover_data=['IDPiscina'],
+                    trendline="ols"
+                    
+                    )
 
-
-fig = px.scatter(cycles_df, 
-                     x=x_variable, 
-                     y=objective_variable_str, 
-                     color=bin_str_binned,
-                  hover_data=['IDPiscina'],
-                  trendline="ols"
-                  
-                  )
 if show_trendlines_only:
     fig.data = [t for t in fig.data if t.mode == "lines"]
     fig.update_traces(showlegend=True)
 st.plotly_chart(fig, use_container_width=True)
+if bin_str:
+    table_df = cycles_df.groupby(bin_str_binned)[objective_variable_str].describe().round(2)
+    table_df.sort_values('50%',inplace = True )
+else:
+    table_df = cycles_df[objective_variable_str].describe().T.round(2)
 
-table_df = cycles_df.groupby(bin_str_binned)[objective_variable_str].describe().round(2)
-table_df.sort_values('50%',inplace = True )
 table_df
 
 

@@ -5,6 +5,7 @@ Here's our first attempt at using data to create a table:
 import plotly.figure_factory as ff
 import streamlit as st
 import numpy as np
+import math
 import pandas as pd
 import plotly.express as px
 import matplotlib.pyplot as plt
@@ -14,11 +15,13 @@ from datetime import datetime
 sns.set_style('whitegrid')
 
 monitorings = pd.read_csv('monitoring_cleaned.csv')
+print("columns below")
+print(monitorings.columns)
 
 monitorings['FechaMuestreo'] = pd.to_datetime(monitorings['FechaMuestreo'])
 
 monitorings['feed_percent_biomass'] =   (monitorings['KilosAlimento']/7) / monitorings['live_biomass']
-
+print(monitorings.columns)
 max_date = monitorings['FechaMuestreo'].max().date()
 min_date = monitorings['FechaMuestreo'].min().date()
 
@@ -106,7 +109,8 @@ param_dict = {
     '1week_growth_rate':[0.5, 1.5, 0.1,5],
     '2week_growth_rate':[0.5, 2, 0.1,5],
     'kg/ha/day':[0.01, 4, 0.1,120],
-    'feed_percent_biomass':[0.01, 10, 0,2000]
+    'feed_percent_biomass':[0.01, 10, 0,2000],
+    'mlResultWeightCv':[0.01, 10, 0,2000]
 }
 
 labels_dict = {
@@ -118,9 +122,18 @@ labels_dict = {
     '1week_growth_rate':'Growth Rate - 1 Week',
     '2week_growth_rate':'Growth Rate - 2 Week',
     'kg/ha/day': 'KG/Ha/Day',
-    'feed_percent_biomass': "Feed - % of biomass"
+    'feed_percent_biomass': "Feed - % of biomass",
+    'mlResultWeightCv':"CV"
 }
 labels_reverse_dict = dict((v,k) for k,v in labels_dict.items())
+active_cycles = pd.read_csv('active_cycles.csv')
+
+active_cycles.sort_values('pondName', inplace = True)
+pond_cycle_dict = active_cycles.set_index('pondName')['PKCiclo'].to_dict()
+
+
+
+
 
 def clean_df(df, x_variable, y_variable, min_threshold, max_threshold, absolute_min, absolute_max, start_date,end_date):
   print(df.shape)
@@ -128,7 +141,7 @@ def clean_df(df, x_variable, y_variable, min_threshold, max_threshold, absolute_
   df = df.dropna(subset=[x_variable, y_variable]).copy()
   df = df[(df[y_variable] < absolute_max) 
           & (df[y_variable] > absolute_min) 
-          & (df['cycle_days'] <105)
+          & (df['cycle_days'] <90)
           & (df['FechaMuestreo'].dt.date >= start_date)
           & (df['FechaMuestreo'].dt.date <= end_date)
           ]
@@ -185,8 +198,14 @@ def growth_model(time, Linf, K, position, w0):
 def exponential_fit(x, a,b,c,d):
   return a*x**3 + b*x**2 + c*x + d
 
+def exponential_fit_2_degrees(x, b,c,d):
+  return b*x**2 + c*x + d
+def exponential_decay(N0, k, t):
+    return N0 * math.exp(-k * t)
 #sidebar ---------------------------------------------------
-cycle_options = [5377, 5365,5384, 5385] 
+cycle_options = pond_cycle_dict.keys() 
+
+
 
 
 
@@ -245,7 +264,7 @@ if second_graph:
    
 y_variable1 = labels_reverse_dict[sidebar_var1]
 y_variable2 = labels_reverse_dict[sidebar_var2]
-cycle_id = sidebar_cycle
+cycle_id = pond_cycle_dict[sidebar_cycle]
         
 
 
@@ -256,10 +275,14 @@ cycle_id = sidebar_cycle
 def get_variable_df(df, y_variable, model,start_time, end_time):
     cleaned_df = clean_df(df, 'cycle_days', y_variable, *param_dict[y_variable],start_time, end_time)
 
-
-    curve_params = get_curve_params(cleaned_df, y_variable,model)
+    if y_variable == 'mlResultWeightCv':
+       curve_params = get_curve_params(cleaned_df[cleaned_df['cycle_days']>15], y_variable,exponential_fit_2_degrees)
+       plot_df = plot_benchmark(curve_params,exponential_fit_2_degrees, 5, 91, 1, 'Cycle_Day', y_variable)
+    else:
+       curve_params = get_curve_params(cleaned_df, y_variable,model)
+       plot_df = plot_benchmark(curve_params,model, 5, 91, 1, 'Cycle_Day', y_variable)
     print(curve_params)
-    plot_df = plot_benchmark(curve_params,model, 5, 91, 1, 'Cycle_Day', y_variable)
+    
     if y_variable == 'Supervivencia':
        plot_df.to_csv('bravito_survival_benchmark.csv')
 
