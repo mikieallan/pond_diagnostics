@@ -12,6 +12,9 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit, least_squares
 import seaborn as sns
 from datetime import datetime
+
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 sns.set_style('whitegrid')
 
 monitorings = pd.read_csv('monitoring_cleaned.csv')
@@ -264,7 +267,9 @@ if second_graph:
    
 y_variable1 = labels_reverse_dict[sidebar_var1]
 y_variable2 = labels_reverse_dict[sidebar_var2]
-cycle_id = pond_cycle_dict[sidebar_cycle]
+
+if sidebar_cycle:
+    cycle_id = pond_cycle_dict[sidebar_cycle]
         
 
 
@@ -305,36 +310,28 @@ if second_graph:
 
 
 
+if sidebar_cycle:
+    plot_current_cycle = monitorings.loc[monitorings['PKCiclo'] == cycle_id, ['cycle_days', y_variable1]]
 
-plot_current_cycle = monitorings.loc[monitorings['PKCiclo'] == cycle_id, ['cycle_days', y_variable1]]
 
-
-plot_current_cycle2 = monitorings.loc[monitorings['PKCiclo'] == cycle_id, ['cycle_days', y_variable2]]
+    plot_current_cycle2 = monitorings.loc[monitorings['PKCiclo'] == cycle_id, ['cycle_days', y_variable2]]
 
     
-print(plot_current_cycle)
-print(harvests.dtypes)
-cycle_raleos =  harvests.loc[
+    cycle_raleos =  harvests.loc[
                         (harvests['Parcial'] == 1) & 
                         (harvests['PKCiclo'] == cycle_id)]
-print(harvests)
-print(cycle_raleos)
+else:
+   cycle_raleos = pd.DataFrame()
 
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
+
+
 
 
     # Create figure with secondary y-axis
 fig = make_subplots(specs=[[{"secondary_y": True}]])
 fig2 = make_subplots(specs=[[{"secondary_y": True}]])
 
-layout = go.Layout(
-  margin=go.layout.Margin(
-        l=0, #left margin
-        r=0, #right margin
-        b=0, #bottom margin
-        t=0, #top margin
-    ))
+
     # Add traces
 if show_benchmarks:
         fig.add_trace(
@@ -345,18 +342,18 @@ if show_benchmarks:
             secondary_y=False,
             
         )
-
-fig.add_trace(
-        go.Scatter(x=plot_current_cycle['cycle_days'], 
-                y=plot_current_cycle[y_variable1], 
-                name= "Current Cycle " + labels_dict[y_variable1],
-                line=dict(color="#0068c9")
-                
-                
-                ),
-        secondary_y=False,
-        
-    )
+if sidebar_cycle:
+    fig.add_trace(
+            go.Scatter(x=plot_current_cycle['cycle_days'], 
+                    y=plot_current_cycle[y_variable1], 
+                    name= "Current Cycle " + labels_dict[y_variable1],
+                    line=dict(color="#0068c9")
+                    
+                    
+                    ),
+            secondary_y=False,
+            
+        )
 
    
 
@@ -371,18 +368,18 @@ if show_benchmarks:
             secondary_y=True,
             
         )
-
-fig.add_trace(
-    go.Scatter(x=plot_current_cycle2['cycle_days'], 
-                y=plot_current_cycle2[y_variable2], 
-                name= "Current Cycle " + labels_dict[y_variable2],
-                line=dict(color="#83c9ff")
-                
-                
-                ),
-        secondary_y=True,
-        
-    )
+if sidebar_cycle:
+    fig.add_trace(
+        go.Scatter(x=plot_current_cycle2['cycle_days'], 
+                    y=plot_current_cycle2[y_variable2], 
+                    name= "Current Cycle " + labels_dict[y_variable2],
+                    line=dict(color="#83c9ff")
+                    
+                    
+                    ),
+            secondary_y=True,
+            
+        )
 
 if second_graph:
     if show_benchmarks:
@@ -402,29 +399,30 @@ if second_graph:
                     secondary_y=True,
                     
                 )  
-        
-    fig2.add_trace(
-    go.Scatter(x=plot_current_cycle3['cycle_days'], 
-                y=plot_current_cycle3[y_variable3], 
-                name= "Current Cycle " + labels_dict[y_variable3],
-                line=dict(color="#FFB983")
-                
-                
-                ),
-        secondary_y=False,
-        
-    ) 
-    fig2.add_trace(
-    go.Scatter(x=plot_current_cycle4['cycle_days'], 
-                y=plot_current_cycle4[y_variable4], 
-                name= "Current Cycle " + labels_dict[y_variable4],
-                line=dict(color="#C900BB")
-                
-                
-                ),
-        secondary_y=True,
-        
-    )
+
+    if sidebar_cycle:        
+        fig2.add_trace(
+        go.Scatter(x=plot_current_cycle3['cycle_days'], 
+                    y=plot_current_cycle3[y_variable3], 
+                    name= "Current Cycle " + labels_dict[y_variable3],
+                    line=dict(color="#FFB983")
+                    
+                    
+                    ),
+            secondary_y=False,
+            
+        ) 
+        fig2.add_trace(
+        go.Scatter(x=plot_current_cycle4['cycle_days'], 
+                    y=plot_current_cycle4[y_variable4], 
+                    name= "Current Cycle " + labels_dict[y_variable4],
+                    line=dict(color="#C900BB")
+                    
+                    
+                    ),
+            secondary_y=True,
+            
+        )
     fig2.update_yaxes(title_text=labels_dict[y_variable3], secondary_y=False)
     fig2.update_yaxes(title_text=labels_dict[y_variable4], secondary_y=True)
 
