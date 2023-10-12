@@ -12,7 +12,7 @@ sns.set_style('whitegrid')
 cycles = pd.read_csv('cycles_cleaned.csv')
 cycles = cycles[cycles['PesoPromedio2'] >19]
 
-top10 = (cycles['MnProveedor'].value_counts()[cycles['MnProveedor'].value_counts()> 18]).index
+top10 = (cycles['MnProveedor'].value_counts()[cycles['MnProveedor'].value_counts()> 10]).index
 print(top10)
 # At locations where the neighborhood is NOT in the top 10, 
 # replace the neighborhood with 'OTHER'
@@ -150,7 +150,8 @@ else:
                     trendline="ols"
                     
                     )
-
+fig.update_xaxes(title_text=x_var1)
+fig.update_yaxes(title_text=objective_var2)
 if show_trendlines_only:
     fig.data = [t for t in fig.data if t.mode == "lines"]
     fig.update_traces(showlegend=True)
